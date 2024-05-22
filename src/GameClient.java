@@ -12,6 +12,8 @@ public class GameClient extends JFrame {
     private JLabel movesLabel;
     private int moveCount = 0;
 
+    JButton retireButton;
+
     public GameClient(String serverAddress) throws IOException {
         game = new Game128();
 
@@ -24,7 +26,23 @@ public class GameClient extends JFrame {
         movesLabel = new JLabel("Moves: 0");
         add(movesLabel, BorderLayout.SOUTH);
 
+        retireButton = new JButton("retire");
+        retireButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent a) {
+                if(a.getSource() == retireButton){
+                    gameWon = true;
+                    out.println("RETIRE");
+                    JOptionPane.showMessageDialog(null,"You have retired from the game.");
+                }
+            }
+        });
+
+        add(retireButton, BorderLayout.NORTH);
+
+        setFocusable(true);
         pack();
+
 
         addKeyListener(new KeyAdapter() {
             @Override
@@ -96,7 +114,7 @@ public class GameClient extends JFrame {
     }
 
     public static void main(String[] args) throws IOException {
-        String serverAddress = args.length > 0 ? args[0] : "192.168.0.3";
+        String serverAddress = args.length > 0 ? args[0] : "192.168.0.6";
         JFrame frame = new GameClient(serverAddress);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(420, 450);
