@@ -11,9 +11,30 @@ public class GameServer {
     private static final Map<ClientHandler, GamePanel> clientPanels = new ConcurrentHashMap<>();
     private static JFrame frame;
     private static JTextArea rankingArea = new JTextArea();
-    private static List<ClientHandler> finishedClients = new ArrayList<>();
+    private static List<ClientHandler> finishedClients = new CopyOnWriteArrayList<>();
+    private static List<ClientHandler> retiredClients = new CopyOnWriteArrayList<>();
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
+        setupGUI();
+
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            System.out.println("Game server started on port " + PORT);
+
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                ClientHandler clientHandler = new ClientHandler(clientSocket);
+                GamePanel gamePanel = new GamePanel();
+                clientPanels.put(clientHandler, gamePanel);
+
+                addGamePanelToGUI(gamePanel);
+                new Thread(clientHandler).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void setupGUI() {
         frame = new JFrame("128 Game Server");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
@@ -28,27 +49,25 @@ public class GameServer {
         frame.add(rankingArea, BorderLayout.SOUTH);
 
         frame.setVisible(true);
+    }
 
-        ServerSocket serverSocket = new ServerSocket(PORT);
-        System.out.println("Game server started on port " + PORT);
-
-        while (true) {
-            Socket clientSocket = serverSocket.accept();
-            ClientHandler clientHandler = new ClientHandler(clientSocket);
-            GamePanel gamePanel = new GamePanel();
-            clientPanels.put(clientHandler, gamePanel);
-
-            panel.add(gamePanel);
-            panel.revalidate();
-            panel.repaint();
-
-            new Thread(clientHandler).start();
-        }
+    private static void addGamePanelToGUI(GamePanel gamePanel) {
+        JPanel panel = (JPanel) ((JScrollPane) frame.getContentPane().getComponent(0)).getViewport().getView();
+        panel.add(gamePanel);
+        panel.revalidate();
+        panel.repaint();
     }
 
     public static synchronized void clientFinished(ClientHandler clientHandler) {
         finishedClients.add(clientHandler);
-        if (finishedClients.size() == clientPanels.size()) {
+        if (finishedClients.size() + retiredClients.size() == clientPanels.size()) {
+            updateRankings();
+        }
+    }
+
+    public static synchronized void clientRetired(ClientHandler clientHandler) {
+        retiredClients.add(clientHandler);
+        if (finishedClients.size() + retiredClients.size() == clientPanels.size()) {
             updateRankings();
         }
     }
@@ -64,15 +83,19 @@ public class GameServer {
             sb.append(String.format("%d. Client %d: %s (Moves: %d)\n",
                     i + 1, client.getId(), client.hasWon() ? "Won" : "Lost", client.getMoves()));
         }
+        sb.append("\nRetired Clients:\n");
+        for (ClientHandler client : retiredClients) {
+            sb.append(String.format("Client %d: Retired\n", client.getId()));
+        }
 
         rankingArea.setText(sb.toString());
     }
 
     public static class ClientHandler implements Runnable {
         private static int clientCount = 0;
-        private Socket socket;
-        private BufferedReader in;
-        private int id;
+        private final Socket socket;
+        private final BufferedReader in;
+        private final int id;
         private int moves;
         private boolean won;
 
@@ -97,12 +120,15 @@ public class GameServer {
                         }
                         GameServer.clientFinished(this);
                         break;
+                    } else if (message.equals("RETIRE")) {
+                        GameServer.clientRetired(this);
+                        break;
                     } else {
-                        moves++;
                         int[][] board = parseBoard(message);
                         GamePanel gamePanel = clientPanels.get(this);
                         if (gamePanel != null) {
                             gamePanel.updateBoard(board);
+                            gamePanel.updateMoves(moves);
                         }
                     }
                 }
@@ -130,8 +156,10 @@ public class GameServer {
         }
 
         private int[][] parseBoard(String message) {
+            String[] parts = message.split(";", 2);
+            moves = Integer.parseInt(parts[0]);
             int[][] board = new int[4][4];
-            String[] rows = message.split(";");
+            String[] rows = parts[1].split(";");
             for (int i = 0; i < 4; i++) {
                 String[] values = rows[i].split(",");
                 for (int j = 0; j < 4; j++) {
@@ -144,15 +172,23 @@ public class GameServer {
 
     public static class GamePanel extends JPanel {
         private int[][] board;
+        private JLabel movesLabel;
 
         public GamePanel() {
             this.board = new int[4][4];
-            setPreferredSize(new Dimension(400, 400));
+            this.movesLabel = new JLabel("Moves: 0");
+            setPreferredSize(new Dimension(400, 450));
+            setLayout(new BorderLayout());
+            add(movesLabel, BorderLayout.SOUTH);
         }
 
         public void updateBoard(int[][] board) {
             this.board = board;
             repaint();
+        }
+
+        public void updateMoves(int moves) {
+            movesLabel.setText("Moves: " + moves);
         }
 
         public void showWinMessage() {
