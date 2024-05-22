@@ -4,11 +4,15 @@ import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 import java.util.Random;
-
+//add retire
 public class GameClient extends JFrame {
-    private Game128 game;
-    private PrintWriter out;
+    private final Game128 game;
+    private final PrintWriter out;
     private boolean gameWon = false;
+    private JLabel movesLabel;
+    private int moveCount = 0;
+
+    JButton retireButton;
 
     public GameClient(String serverAddress) throws IOException {
         game = new Game128();
@@ -17,13 +21,33 @@ public class GameClient extends JFrame {
         out = new PrintWriter(socket.getOutputStream(), true);
 
         GameBoard board = new GameBoard(game);
-        add(board);
+        add(board, BorderLayout.CENTER);
+
+        movesLabel = new JLabel("Moves: 0");
+        add(movesLabel, BorderLayout.SOUTH);
+
+        retireButton = new JButton("retire");
+        retireButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent a) {
+                if(a.getSource() == retireButton){
+                    gameWon = true;
+                    out.println("RETIRE");
+                    JOptionPane.showMessageDialog(null,"You have retired from the game.");
+                }
+            }
+        });
+
+        add(retireButton, BorderLayout.NORTH);
+
+        setFocusable(true);
         pack();
+
 
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if (gameWon) return;  // 게임이 끝난 경우 추가 동작 방지
+                if (gameWon) return;  // Prevent further actions if the game is won
 
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_LEFT:
@@ -41,20 +65,30 @@ public class GameClient extends JFrame {
                 }
                 board.repaint();
                 sendBoardToServer(game.getBoard());
-                if (game.isWin()) {
-                    gameWon = true;
-                    out.println("WIN");
-                    JOptionPane.showMessageDialog(null, "You Win!");
+                moveCount++;
+                movesLabel.setText("Moves: " + moveCount);
+                checkGameState();
+            }
+        });
+
+        // Add a window listener to close resources properly
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                try {
+                    out.close();
+                    socket.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
                 }
-                if (game.isGameOver()) {
-                    JOptionPane.showMessageDialog(null, "Game Over");
-                }
+                System.exit(0);
             }
         });
     }
 
     private void sendBoardToServer(int[][] board) {
         StringBuilder sb = new StringBuilder();
+        sb.append(moveCount).append(";");
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 sb.append(board[i][j]);
@@ -69,8 +103,19 @@ public class GameClient extends JFrame {
         out.println(sb.toString());
     }
 
+    private void checkGameState() {
+        if (game.isWin()) {
+            gameWon = true;
+            out.println("WIN");
+            JOptionPane.showMessageDialog(null, "You Win!");
+        } else if (game.isGameOver()) {
+            JOptionPane.showMessageDialog(null, "Game Over");
+        }
+    }
+
     public static void main(String[] args) throws IOException {
-        JFrame frame = new GameClient("172.20.10.9");
+        String serverAddress = args.length > 0 ? args[0] : "192.168.0.6";
+        JFrame frame = new GameClient(serverAddress);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(420, 450);
         frame.setVisible(true);
@@ -79,7 +124,7 @@ public class GameClient extends JFrame {
 
 class Game128 {
     private int[][] board;
-    private Random random;
+    private final Random random;
 
     public Game128() {
         board = new int[4][4];
@@ -111,30 +156,9 @@ class Game128 {
     }
 
     public void moveLeft() {
-        boolean needAddTile = false;
-        for (int i = 0; i < 4; i++) {
-            int[] row = board[i];
-            int[] newRow = new int[4];
-            int newIndex = 0;
-            boolean merged = false;
-
-            for (int j = 0; j < 4; j++) {
-                if (row[j] != 0) {
-                    if (newIndex > 0 && newRow[newIndex - 1] == row[j] && !merged) {
-                        newRow[newIndex - 1] *= 2;
-                        merged = true;
-                        needAddTile = true;
-                    } else {
-                        newRow[newIndex++] = row[j];
-                        merged = false;
-                    }
-                }
-            }
-
-            board[i] = newRow;
+        if (moveAndMerge()) {
+            addRandomTile();
         }
-        addRandomTile();
-
     }
 
     public void moveRight() {
@@ -161,6 +185,35 @@ class Game128 {
         rotateBoard();
     }
 
+    private boolean moveAndMerge() {
+        boolean moved = false;
+        for (int i = 0; i < 4; i++) {
+            int[] row = board[i];
+            int[] newRow = new int[4];
+            int newIndex = 0;
+            boolean merged = false;
+
+            for (int j = 0; j < 4; j++) {
+                if (row[j] != 0) {
+                    if (newIndex > 0 && newRow[newIndex - 1] == row[j] && !merged) {
+                        newRow[newIndex - 1] *= 2;
+                        merged = true;
+                        moved = true;
+                    } else {
+                        if (newRow[newIndex] != row[j]) {
+                            moved = true;
+                        }
+                        newRow[newIndex++] = row[j];
+                        merged = false;
+                    }
+                }
+            }
+
+            board[i] = newRow;
+        }
+        return moved;
+    }
+
     private void rotateBoard() {
         int[][] newBoard = new int[4][4];
         for (int i = 0; i < 4; i++) {
@@ -172,9 +225,9 @@ class Game128 {
     }
 
     public boolean isWin() {
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                if (board[i][j] == 128) {
+        for (int[] row : board) {
+            for (int value : row) {
+                if (value == 128) {
                     return true;
                 }
             }
@@ -201,7 +254,7 @@ class Game128 {
 }
 
 class GameBoard extends JPanel {
-    private Game128 game;
+    private final Game128 game;
 
     public GameBoard(Game128 game) {
         this.game = game;
