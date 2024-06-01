@@ -336,6 +336,7 @@ public class GameServer {
     private static final LineBorder lineBorder = new LineBorder(Color.BLACK, 1, false);
     private static List<ClientHandler> finishedClients = new CopyOnWriteArrayList<>();
     private static List<ClientHandler> retiredClients = new CopyOnWriteArrayList<>();
+    private static int clientCount  = 0;
 
     public static void main(String[] args) {
         setupGUI();
@@ -344,7 +345,13 @@ public class GameServer {
             System.out.println("Game server started on port " + PORT);
 
             while (true) {
+                if (clientCount >= 8){
+                    System.out.println("FULL Cannot accept new Client.");
+                    Socket ClientSocket = serverSocket.accept();
+                    continue;
+                }
                 Socket clientSocket = serverSocket.accept();
+                clientCount++;
                 ClientHandler clientHandler = new ClientHandler(clientSocket);
                 JPanel gamePanelContainer = createGamePanelContainer(clientHandler);
                 clientPanels.put(clientHandler, gamePanelContainer);
@@ -440,6 +447,8 @@ public class GameServer {
         streamingPanel = new JPanel();
         streamingPanel.setLayout(new GridLayout(2, 4,3,3));
 
+        // streamingPanel -> panels -> topPanelInner -> playerLabel
+
         for (int i = 0; i < 8; i++) {
             JPanel panel = new JPanel(new BorderLayout());
             JPanel topPanelInner = new JPanel(new BorderLayout());
@@ -460,8 +469,8 @@ public class GameServer {
             JLabel playerMovesLabel = new JLabel("Moves: NULL");
             playerMovesLabel.setBorder(lineBorder);
             topPanelInner.add(playerMovesLabel, BorderLayout.EAST);
-
             panels.add(panel);
+
         }
 
 
@@ -476,7 +485,6 @@ public class GameServer {
             cellLabel.setBorder(lineBorder);
             panel.add(cellLabel, BorderLayout.CENTER);
         }
-
 
         // Bottom Panel
         JPanel bottomPanel = new JPanel();
@@ -493,6 +501,8 @@ public class GameServer {
         frame.add(streamingPanel, BorderLayout.CENTER);
         frame.add(bottomPanel, BorderLayout.SOUTH);
 //        frame.add(rankingArea, BorderLayout.SOUTH);
+
+
 
         frame.setVisible(true);
     }
@@ -548,7 +558,7 @@ public class GameServer {
         private final int id;
         private int moves;
         private boolean won;
-        private String playerName;
+        private int clientIdNum;
 
         public ClientHandler(Socket socket) throws IOException {
             this.socket = socket;
@@ -556,8 +566,29 @@ public class GameServer {
             this.id = ++clientCount;
             this.moves = 0;
             this.won = false;
+            this.clientIdNum = clientCount-1;
         }
 
+        public void InitiatePanel(String playerName) {
+            JPanel firstPanel = panels.get(clientIdNum);  // 해당 클라이언트의 패널 가져오기
+            Component[] components = firstPanel.getComponents();
+            for (Component component : components) {
+                if (component instanceof JPanel) {
+                    JPanel innerPanel = (JPanel) component;
+                    Component[] innerComponents = innerPanel.getComponents();
+                    for (Component innerComponent : innerComponents) {
+                        if (innerComponent instanceof JLabel) {
+                            JLabel label = (JLabel) innerComponent;
+                            if (label.getText().startsWith("Player")) {
+                                label.setText(playerName);  // 플레이어 이름 설정
+                            }
+                        }
+                    }
+                }
+            }
+            firstPanel.revalidate();
+            firstPanel.repaint();
+        }
 
         @Override
         public void run() {
@@ -565,11 +596,11 @@ public class GameServer {
                 String message;
                 while ((message = in.readLine()) != null) {
                     if (message.indexOf("^") == 0) {
-                        playerName = message.substring(1);
-                        GamePanel gamePanel = new GamePanel();
+                        String playerName = message.substring(1);
+                        InitiatePanel(playerName);
                     }
 
-                    if (message.equals("WIN")) {
+                    else if (message.equals("WIN")) {
                         won = true;
                         GamePanel gamePanel = getGamePanel();
                         if (gamePanel != null) {
@@ -581,6 +612,7 @@ public class GameServer {
                         GameServer.clientRetired(this);
                         break;
                     } else {
+//                        System.out.println(message);
                         int[][] board = parseBoard(message);
                         GamePanel gamePanel = getGamePanel();
                         if (gamePanel != null) {
