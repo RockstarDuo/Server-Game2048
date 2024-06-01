@@ -346,8 +346,8 @@ public class GameServer {
 
             while (true) {
                 if (clientCount >= 8){
-                    System.out.println("FULL Cannot accept new Client.");
-                    Socket ClientSocket = serverSocket.accept();
+                    System.out.println("Game Room is FULL. Cannot accept new Client.");
+                    serverSocket.accept();
                     continue;
                 }
                 Socket clientSocket = serverSocket.accept();
@@ -458,9 +458,9 @@ public class GameServer {
             JLabel playerLabel = new JLabel("Player " + (i + 1));
             playerLabel.setHorizontalAlignment(SwingConstants.CENTER);
             playerLabel.setBorder(lineBorder);
-            topPanelInner.add(playerLabel, BorderLayout.WEST);
+            topPanelInner.add(playerLabel, BorderLayout.CENTER);
 
-            JLabel highScoreLabel = new JLabel("High Score: NULL");
+            /*JLabel highScoreLabel = new JLabel("High Score: NULL");
             highScoreLabel.setFont(highScoreLabel.getFont().deriveFont(Font.BOLD));
             highScoreLabel.setHorizontalAlignment(SwingConstants.CENTER);
             highScoreLabel.setVerticalAlignment(SwingConstants.CENTER);
@@ -468,7 +468,7 @@ public class GameServer {
             topPanelInner.add(highScoreLabel, BorderLayout.CENTER);
             JLabel playerMovesLabel = new JLabel("Moves: NULL");
             playerMovesLabel.setBorder(lineBorder);
-            topPanelInner.add(playerMovesLabel, BorderLayout.EAST);
+            topPanelInner.add(playerMovesLabel, BorderLayout.EAST);*/
             panels.add(panel);
 
         }
@@ -489,7 +489,7 @@ public class GameServer {
         // Bottom Panel
         JPanel bottomPanel = new JPanel();
         bottomPanel.setLayout(new BorderLayout());
-        JLabel bottomLabel = new JLabel("Additional Fearture will be added here.");
+        JLabel bottomLabel = new JLabel("2048 Game made by  @ _se__hyeon  &  @ jaehunshin_");
         bottomLabel.setHorizontalAlignment(SwingConstants.CENTER);
         bottomLabel.setVerticalAlignment(SwingConstants.CENTER);
         bottomLabel.setBorder(lineBorder);
@@ -510,7 +510,6 @@ public class GameServer {
     private static JPanel createGamePanelContainer(ClientHandler clientHandler) {
         JPanel gamePanelContainer = panels.get(clientPanels.size());
         gamePanelContainer.remove(1); // Remove the cellLabel
-
         GamePanel gamePanel = new GamePanel();
         gamePanelContainer.add(gamePanel, BorderLayout.CENTER);
         streamingPanel.revalidate();
@@ -559,6 +558,7 @@ public class GameServer {
         private int moves;
         private boolean won;
         private int clientIdNum;
+        private boolean retired = false;
 
         public ClientHandler(Socket socket) throws IOException {
             this.socket = socket;
@@ -580,7 +580,8 @@ public class GameServer {
                         if (innerComponent instanceof JLabel) {
                             JLabel label = (JLabel) innerComponent;
                             if (label.getText().startsWith("Player")) {
-                                label.setText(playerName);  // 플레이어 이름 설정
+                                label.setText("< " + playerName + " >");  // 플레이어 이름 설정
+                                label.getFont().deriveFont(Font.BOLD, 30);
                             }
                         }
                     }
@@ -588,6 +589,31 @@ public class GameServer {
             }
             firstPanel.revalidate();
             firstPanel.repaint();
+        }
+        public void playerExit(ClientHandler clientHandler) {
+            GamePanel gamePanel = getGamePanel();
+            gamePanel.removeAll();
+            JPanel exitPanel = new JPanel();
+            JLabel exitLabel = new JLabel("This Player Intentionally Exit The Game.");
+            gamePanel.add(exitPanel, BorderLayout.CENTER);
+            exitPanel.setLayout(new FlowLayout());
+            exitPanel.add(exitLabel);
+            gamePanel.setBorder(lineBorder);
+            gamePanel.revalidate();
+            gamePanel.repaint();
+
+        }
+
+        public void playerRetire(ClientHandler clientHandler) {
+            GamePanel gamePanel = getGamePanel();
+            gamePanel.removeAll();
+            JPanel exitPanel = new JPanel();
+            JLabel exitLabel = new JLabel("This Player RETIRE The Game.");
+            gamePanel.add(exitPanel, BorderLayout.CENTER);
+            exitPanel.add(exitLabel, BorderLayout.CENTER);
+            gamePanel.setBorder(lineBorder);
+            gamePanel.revalidate();
+            gamePanel.repaint();
         }
 
         @Override
@@ -610,6 +636,8 @@ public class GameServer {
                         break;
                     } else if (message.equals("RETIRE")) {
                         GameServer.clientRetired(this);
+                        playerRetire(this);
+                        this.retired = true;
                         break;
                     } else {
 //                        System.out.println(message);
@@ -625,6 +653,10 @@ public class GameServer {
                 e.printStackTrace();
             } finally {
                 try {
+                    if (!retired){
+                        clientRetired(this);
+                        playerExit(this);
+                    }
                     socket.close();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -722,14 +754,16 @@ public class GameServer {
 
         private Color getTileColor(int value) {
             switch (value) {
-                case 2: return Color.LIGHT_GRAY;
-                case 4: return Color.GRAY;
-                case 8: return Color.ORANGE;
-                case 16: return Color.RED;
-                case 32: return Color.PINK;
-                case 64: return Color.YELLOW;
-                case 128: return Color.GREEN;
-                default: return Color.WHITE;
+                case 2: return new Color(255, 182, 193);
+                case 4: return new Color(173, 216, 230);
+                case 8: return new Color(152, 251, 152);
+                case 16: return new Color(253, 253, 150);
+                case 32: return new Color(216, 191, 216);
+                case 64: return new Color(255, 204, 153);
+                case 128: return new Color(189, 252, 201);
+                case 256: return new Color(218, 185, 255); // Light Pastel Purple
+                case 512: return new Color(255, 255, 204); // Light Pastel Yellow
+                default: return Color.white;
             }
         }
     }
