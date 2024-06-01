@@ -429,8 +429,9 @@ public class GameServer {
         // Top Panel
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BorderLayout());
-        topPanel.setBackground(Color.ORANGE);
+        topPanel.setBackground(Color.WHITE);
         JLabel topLabel = new JLabel("2048 Game Server Screen");
+        topLabel.setForeground(new Color(50, 150, 200));
         topLabel.setFont(topLabel.getFont().deriveFont(Font.BOLD, 30));
         topLabel.setHorizontalAlignment(SwingConstants.CENTER);
         topLabel.setVerticalAlignment(SwingConstants.CENTER);
@@ -452,10 +453,12 @@ public class GameServer {
         for (int i = 0; i < 8; i++) {
             JPanel panel = new JPanel(new BorderLayout());
             JPanel topPanelInner = new JPanel(new BorderLayout());
+            topPanelInner.setBackground(new Color(50, 150, 200));
             panel.add(topPanelInner, BorderLayout.NORTH);
 
 //            topPanelInner.setBackground(colors[i]);
             JLabel playerLabel = new JLabel("Player " + (i + 1));
+            playerLabel.setForeground(Color.WHITE);
             playerLabel.setHorizontalAlignment(SwingConstants.CENTER);
             playerLabel.setBorder(lineBorder);
             topPanelInner.add(playerLabel, BorderLayout.CENTER);
@@ -483,13 +486,17 @@ public class GameServer {
             cellLabel.setHorizontalAlignment(SwingConstants.CENTER);
             cellLabel.setVerticalAlignment(SwingConstants.CENTER);
             cellLabel.setBorder(lineBorder);
+            cellLabel.setForeground(new Color(50, 150, 200));
+            panel.setBackground(Color.WHITE);
             panel.add(cellLabel, BorderLayout.CENTER);
         }
 
         // Bottom Panel
         JPanel bottomPanel = new JPanel();
         bottomPanel.setLayout(new BorderLayout());
+        bottomPanel.setBackground(Color.WHITE);
         JLabel bottomLabel = new JLabel("2048 Game made by  @ _se__hyeon  &  @ jaehunshin_");
+        bottomLabel.setForeground(new Color(50, 150, 200));
         bottomLabel.setHorizontalAlignment(SwingConstants.CENTER);
         bottomLabel.setVerticalAlignment(SwingConstants.CENTER);
         bottomLabel.setBorder(lineBorder);
@@ -579,6 +586,7 @@ public class GameServer {
                     for (Component innerComponent : innerComponents) {
                         if (innerComponent instanceof JLabel) {
                             JLabel label = (JLabel) innerComponent;
+                            label.setForeground(Color.WHITE);
                             if (label.getText().startsWith("Player")) {
                                 label.setText("< " + playerName + " >");  // 플레이어 이름 설정
                                 label.getFont().deriveFont(Font.BOLD, 30);
@@ -592,26 +600,66 @@ public class GameServer {
         }
         public void playerExit(ClientHandler clientHandler) {
             GamePanel gamePanel = getGamePanel();
+
+            // Load the original ImageIcon
+            ImageIcon retireImageIcon = new ImageIcon("disconnectedimage.png");
+            Image originalImage = retireImageIcon.getImage();
+
+            // Get the size of the panel
+            Dimension panelSize = gamePanel.getSize();
+
+            // Scale the image to fit the panel size
+            Image scaledImage = originalImage.getScaledInstance(panelSize.width, panelSize.height, Image.SCALE_SMOOTH);
+
+            // Create a new ImageIcon with the scaled image
+            ImageIcon scaledImageIcon = new ImageIcon(scaledImage);
+
+            // Create and set up the label with the scaled image
             gamePanel.removeAll();
-            JPanel exitPanel = new JPanel();
-            JLabel exitLabel = new JLabel("This Player Intentionally Exit The Game.");
+            JLabel retireLabel = new JLabel(scaledImageIcon);
+
+            // Create and set up the exit panel
+            JPanel exitPanel = new JPanel(new BorderLayout());
+            exitPanel.add(retireLabel, BorderLayout.CENTER);
+
+            // Add the exit panel to the game panel
             gamePanel.add(exitPanel, BorderLayout.CENTER);
-            exitPanel.setLayout(new FlowLayout());
-            exitPanel.add(exitLabel);
             gamePanel.setBorder(lineBorder);
+
+            // Revalidate and repaint the game panel
             gamePanel.revalidate();
             gamePanel.repaint();
-
         }
 
         public void playerRetire(ClientHandler clientHandler) {
             GamePanel gamePanel = getGamePanel();
+
+            // Load the original ImageIcon
+            ImageIcon retireImageIcon = new ImageIcon("gameOverimage.png");
+            Image originalImage = retireImageIcon.getImage();
+
+            // Get the size of the panel
+            Dimension panelSize = gamePanel.getSize();
+
+            // Scale the image to fit the panel size
+            Image scaledImage = originalImage.getScaledInstance(panelSize.width, panelSize.height, Image.SCALE_SMOOTH);
+
+            // Create a new ImageIcon with the scaled image
+            ImageIcon scaledImageIcon = new ImageIcon(scaledImage);
+
+            // Create and set up the label with the scaled image
             gamePanel.removeAll();
-            JPanel exitPanel = new JPanel();
-            JLabel exitLabel = new JLabel("This Player RETIRE The Game.");
+            JLabel retireLabel = new JLabel(scaledImageIcon);
+
+            // Create and set up the exit panel
+            JPanel exitPanel = new JPanel(new BorderLayout());
+            exitPanel.add(retireLabel, BorderLayout.CENTER);
+
+            // Add the exit panel to the game panel
             gamePanel.add(exitPanel, BorderLayout.CENTER);
-            exitPanel.add(exitLabel, BorderLayout.CENTER);
             gamePanel.setBorder(lineBorder);
+
+            // Revalidate and repaint the game panel
             gamePanel.revalidate();
             gamePanel.repaint();
         }
@@ -705,7 +753,10 @@ public class GameServer {
             this.movesLabel = new JLabel("Moves: 0");
             setPreferredSize(new Dimension(300, 400));
             setLayout(new BorderLayout());
-            add(movesLabel, BorderLayout.SOUTH);
+            JPanel bottomMoves = new JPanel();
+            bottomMoves.setLayout(new BorderLayout());
+            bottomMoves.add(movesLabel,BorderLayout.CENTER);
+            add(bottomMoves, BorderLayout.SOUTH);
         }
 
         public void updateBoard(int[][] board) {
