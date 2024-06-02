@@ -6,6 +6,8 @@ import java.net.*;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.Comparator;
+import java.util.Collections;
 
 public class GameServer {
     private static final int PORT = 9999;
@@ -19,6 +21,9 @@ public class GameServer {
     private static List<ClientHandler> retiredClients = new CopyOnWriteArrayList<>();
     private static List<ClientHandler> exitedClients = new CopyOnWriteArrayList<>();
     private static List<ClientHandler> gameoverClients = new CopyOnWriteArrayList<>();
+    private static List<ClientHandler> easyModeClients = new CopyOnWriteArrayList<>();
+    private static List<ClientHandler> normalModeClients = new CopyOnWriteArrayList<>();
+    private static List<ClientHandler> hardModeClients = new CopyOnWriteArrayList<>();
     private static int clientCount  = 0;
 
     public static void main(String[] args) {
@@ -145,15 +150,14 @@ public class GameServer {
 
     public static synchronized void clientFinished(ClientHandler clientHandler) {
         finishedClients.add(clientHandler);
-        System.out.println("---------------------------------------------");
+        /*System.out.println("---------------------------------------------");
         System.out.println("finished client: " + finishedClients.size());
         System.out.println("retired client: " + retiredClients.size());
         System.out.println("exited client: " + exitedClients.size());
         System.out.println("clientPanels: " + clientPanels.size());
-        System.out.println("---------------------------------------------");
+        System.out.println("---------------------------------------------");*/
 
         if (finishedClients.size() + retiredClients.size() + exitedClients.size() + gameoverClients.size() == clientPanels.size()) {
-            updateRankings();
             gameAllFinished();
             System.out.println("All Players Finished the Game.");
         }
@@ -161,14 +165,13 @@ public class GameServer {
 
     public static synchronized void clientRetired(ClientHandler clientHandler) {
         retiredClients.add(clientHandler);
-        System.out.println("---------------------------------------------");
+        /*System.out.println("---------------------------------------------");
         System.out.println("finished client: " + finishedClients.size());
         System.out.println("retired client: " + retiredClients.size());
         System.out.println("exited client: " + exitedClients.size());
         System.out.println("clientPanels: " + clientPanels.size());
-        System.out.println("---------------------------------------------");
+        System.out.println("---------------------------------------------");*/
         if (finishedClients.size() + retiredClients.size() + exitedClients.size() + gameoverClients.size() == clientPanels.size()) {
-            updateRankings();
             gameAllFinished();
             System.out.println("All Players Finished the Game.");
         }
@@ -176,14 +179,13 @@ public class GameServer {
 
     public static synchronized void clientExit(ClientHandler clientHandler) {
         exitedClients.add(clientHandler);
-        System.out.println("---------------------------------------------");
+        /*System.out.println("---------------------------------------------");
         System.out.println("finished client: " + finishedClients.size());
         System.out.println("retired client: " + retiredClients.size());
         System.out.println("exited client: " + exitedClients.size());
         System.out.println("clientPanels: " + clientPanels.size());
-        System.out.println("---------------------------------------------");
+        System.out.println("---------------------------------------------");*/
         if (finishedClients.size() + retiredClients.size() + exitedClients.size() + gameoverClients.size() == clientPanels.size()) {
-            updateRankings();
             gameAllFinished();
             System.out.println("All Players Finished the Game.");
         }
@@ -192,88 +194,131 @@ public class GameServer {
     public static synchronized void clientGameover(ClientHandler clientHandler) {
         gameoverClients.add(clientHandler);
         if (finishedClients.size() + retiredClients.size() + exitedClients.size() + gameoverClients.size() == clientPanels.size()) {
-            updateRankings();
             gameAllFinished();
             System.out.println("All Players Finished the Game.");
         }
     }
 
+    private static String makeNameMoveString(List<ClientHandler> clientList) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        for (ClientHandler client : clientList) {
+            stringBuilder.append(client.name + " ");
+            stringBuilder.append(client.moves + ";");
+        }
+        String finalStr = stringBuilder.toString();
+        System.out.println(finalStr);
+        return finalStr;
+    }
+
+    private static String makeNameString(List<ClientHandler> clientList) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (ClientHandler client : clientList) {
+            stringBuilder.append(client.name + ";");
+        }
+
+        String finalStr = stringBuilder.toString();
+        System.out.println(finalStr);
+        return finalStr;
+    }
     private static void gameAllFinished(){
-        JOptionPane.showMessageDialog(null, "All Players Finished the Game.", "Messae", JOptionPane.INFORMATION_MESSAGE);
-        JFrame statisticsFrame = new JFrame("Game Statistcs");
-        statisticsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        statisticsFrame.setLayout(new BorderLayout());
+        // finished -> gameover -> retire -> exit 순으로 보냄
+        for (ClientHandler client : clientPanels.keySet()) {
+            client.out.println(makeNameMoveString(sortFinishedClientList(easyModeClients)));
+            client.out.println(makeNameString(sortGameoverClientList(easyModeClients)));
+            client.out.println(makeNameString(sortRetireClientList(easyModeClients)));
+            client.out.println(makeNameString(sortExitedClientList(easyModeClients)));
 
-        List<JPanel> panelList = new ArrayList<>();
+            client.out.println(makeNameMoveString(sortFinishedClientList(normalModeClients)));
+            client.out.println(makeNameString(sortGameoverClientList(normalModeClients)));
+            client.out.println(makeNameString(sortRetireClientList(normalModeClients)));
+            client.out.println(makeNameString(sortExitedClientList(normalModeClients)));
 
-        // top Panel
-        JPanel topPanel = new JPanel();
-        topPanel.setLayout(new BorderLayout());
-        topPanel.setBackground(Color.ORANGE);
-        topPanel.setBorder(lineBorder);
-        JLabel topLabel = new JLabel("2048 Game Statistics");
-        topLabel.setFont(topLabel.getFont().deriveFont(Font.BOLD, 30));
-        topPanel.add(topLabel, BorderLayout.CENTER);
-        statisticsFrame.add(topPanel, BorderLayout.CENTER);
-        panelList.add(topPanel);
-
-        // main Panel
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new GridLayout(1, 3));
-        mainPanel.setBorder(lineBorder);
-        panelList.add(mainPanel);
-
-        JPanel finishedPlayerPanel = new JPanel(new BorderLayout());
-        JLabel finishedPlayerLabel = new JLabel("Finished Player Rankings");
-        finishedPlayerLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        finishedPlayerLabel.setVerticalAlignment(SwingConstants.CENTER);
-        finishedPlayerLabel.setFont(finishedPlayerLabel.getFont().deriveFont(Font.BOLD, 20));
-        finishedPlayerPanel.add(finishedPlayerLabel, BorderLayout.NORTH);
-        finishedPlayerPanel.setLayout(new GridLayout(1, finishedClients.size()));
-        // 각 플레이어 moves 수에 따른 sort 필요.
-        // 플레이어 난이도 선택에 따른 List 및 Panel 필요.
-
+            client.out.println(makeNameMoveString(sortFinishedClientList(hardModeClients)));
+            client.out.println(makeNameString(sortGameoverClientList(hardModeClients)));
+            client.out.println(makeNameString(sortRetireClientList(hardModeClients)));
+            client.out.println(makeNameString(sortExitedClientList(hardModeClients)));
+        }
     }
 
+    // 정상적으로 게임을 모두 완료한 클라이언트들을 moves의 오름차순으로 정렬한 새로운 리스트에 add 한다.
+    private static List<ClientHandler> sortFinishedClientList(List<ClientHandler> clientList) {
+        List<ClientHandler> filteredClients = new ArrayList<>();
 
-    private static void updateRankings() {
-        List<ClientHandler> sortedClients = new ArrayList<>(finishedClients);
-        sortedClients.sort(Comparator.comparingInt(ClientHandler::getMoves));
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("Ranking:\n");
-        for (int i = 0; i < sortedClients.size(); i++) {
-            ClientHandler client = sortedClients.get(i);
-            sb.append(String.format("%d. Client %d: %s (Moves: %d)\n",
-                    i + 1, client.getId(), client.hasWon() ? "Won" : "Lost", client.getMoves()));
-        }
-        sb.append("\nRetired Clients:\n");
-        for (ClientHandler client : retiredClients) {
-            sb.append(String.format("Client %d: Retired\n", client.getId()));
+        // Filter out clients who have gameOvered, retired, or exited
+        for (ClientHandler client : clientList) {
+            if (!client.gameOvered && !client.retired && !client.exited) {
+                filteredClients.add(client);
+            }
         }
 
-        rankingArea.setText(sb.toString());
+        // Sort the filtered clients based on the number of moves
+        filteredClients.sort(Comparator.comparing(ClientHandler::getMoves));
+
+        // moves 수 오름차순으로 sort 한거 확인출력
+        for (ClientHandler client : filteredClients) {
+            System.out.println(client.getMoves());
+        }
+
+        // Return the sorted list of clients
+        return filteredClients;
     }
+
+    private static List<ClientHandler> sortRetireClientList(List<ClientHandler> clientList) {
+        List<ClientHandler> sortedRetireClients = new ArrayList<>();
+        for (ClientHandler client : clientList) {
+            if (client.retired) {
+                sortedRetireClients.add(client);
+            }
+        }
+        return sortedRetireClients;
+    }
+
+    private static List<ClientHandler> sortExitedClientList(List<ClientHandler> clientList) {
+        List<ClientHandler> sortedExitedClients = new ArrayList<>();
+        for (ClientHandler client : clientList) {
+            if (client.exited) {
+                sortedExitedClients.add(client);
+            }
+        }
+        return sortedExitedClients;
+    }
+
+    private static List<ClientHandler> sortGameoverClientList(List<ClientHandler> clientList) {
+        List<ClientHandler> sortedGameoverClients = new ArrayList<>();
+        for (ClientHandler client : clientList) {
+            if (client.gameOvered) {
+                sortedGameoverClients.add(client);
+            }
+        }
+        return sortedGameoverClients;
+    }
+
 
     public static class ClientHandler implements Runnable {
         private static int clientCount = 0;
         private final Socket socket;
         private final BufferedReader in;
+        private final PrintWriter out;
         private final int id;
         private int moves;
         private boolean won;
         private int clientIdNum;
         private boolean retired = false;
+        private boolean gameOvered = false;
+        private boolean exited = false;
         private String name = null;
 
 
         public ClientHandler(Socket socket) throws IOException {
             this.socket = socket;
             this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            this.out = new PrintWriter(socket.getOutputStream(), true);
             this.id = ++clientCount;
             this.moves = 0;
             this.won = false;
             this.clientIdNum = clientCount-1;
+
         }
 
         public void InitiatePanel(String playerName) {
@@ -331,6 +376,8 @@ public class GameServer {
             // Revalidate and repaint the game panel
             gamePanel.revalidate();
             gamePanel.repaint();
+
+            this.exited = true;
         }
 
         public void playerRetire(ClientHandler clientHandler) {
@@ -376,7 +423,7 @@ public class GameServer {
             JPanel winPanel = new JPanel(new BorderLayout());
 
             // Write down the code below and add new feature to the winPanel.
-            JLabel winLabel = new JLabel("Image will go here.");
+            JLabel winLabel = new JLabel("Player WIN!");
             winLabel.setVerticalAlignment(SwingConstants.CENTER);
             winLabel.setHorizontalAlignment(SwingConstants.CENTER);
             winPanel.add(winLabel, BorderLayout.CENTER);
@@ -384,7 +431,42 @@ public class GameServer {
             gamePanel.add(winPanel, BorderLayout.CENTER);
             gamePanel.revalidate();
             gamePanel.repaint();
+            won = true;
 
+        }
+
+        public void playerGameOver(ClientHandler clientHandler) {
+            GamePanel gamePanel = getGamePanel();
+
+            // Load the original ImageIcon
+            ImageIcon retireImageIcon = new ImageIcon("gameOverimage.png");
+            Image originalImage = retireImageIcon.getImage();
+
+            // Get the size of the panel
+            Dimension panelSize = gamePanel.getSize();
+
+            // Scale the image to fit the panel size
+            Image scaledImage = originalImage.getScaledInstance(panelSize.width, panelSize.height, Image.SCALE_SMOOTH);
+
+            // Create a new ImageIcon with the scaled image
+            ImageIcon scaledImageIcon = new ImageIcon(scaledImage);
+
+            // Create and set up the label with the scaled image
+            gamePanel.removeAll();
+            JLabel retireLabel = new JLabel(scaledImageIcon);
+
+            // Create and set up the exit panel
+            JPanel exitPanel = new JPanel(new BorderLayout());
+            exitPanel.add(retireLabel, BorderLayout.CENTER);
+
+            // Add the exit panel to the game panel
+            gamePanel.add(exitPanel, BorderLayout.CENTER);
+            gamePanel.setBorder(lineBorder);
+
+            // Revalidate and repaint the game panel
+            gamePanel.revalidate();
+            gamePanel.repaint();
+            this.gameOvered = true;
         }
 
         @Override
@@ -400,15 +482,21 @@ public class GameServer {
 
                         if (difficulty.equals("Easy")) {
                             System.out.println("Difficulty: Easy");
+                            easyModeClients.add(this);
                         }else if (difficulty.equals("Normal")) {
                             System.out.println("Difficulty: Normal");
+                            normalModeClients.add(this);
                         }else if(difficulty.equals("Hard")) {
                             System.out.println("Difficulty: Hard");
+                            hardModeClients.add(this);
                         }
+                        /*System.out.println("----------------------------------");
+                        System.out.println("Easy Mode Clients: " + easyModeClients.size());
+                        System.out.println("Normal Mode Clients: " + normalModeClients.size());
+                        System.out.println("Hard Mode Clients: " + hardModeClients.size());
+                        System.out.println("----------------------------------");*/
 
                     } else if (message.equals("WIN")) {
-                        won = true;
-                        GamePanel gamePanel = getGamePanel();
                         playerWin(this);
                         GameServer.clientFinished(this);
                         break;
@@ -417,8 +505,9 @@ public class GameServer {
                         GameServer.clientRetired(this);
                         break;
                     } else if (message.equals("GAMEOVER")) {
+                        playerGameOver(this);
+                        GameServer.clientGameover(this);
 
-                        GameServer.gameoverClients.add(this);
                     } else {
 //                        System.out.println(message);
                         int[][] board = parseBoard(message);
@@ -433,7 +522,7 @@ public class GameServer {
                 e.printStackTrace();
             } finally {
                 try {
-                    if (!retired & !won){
+                    if (!retired & !won & !gameOvered){
                         playerExit(this);
                         clientExit(this);
                     }
