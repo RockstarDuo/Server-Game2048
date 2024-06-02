@@ -22,6 +22,7 @@ public class GameServer {
     private static int clientCount  = 0;
 
     public static void main(String[] args) {
+        gameAllFinished();
         setupGUI();
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
@@ -198,42 +199,202 @@ public class GameServer {
         }
     }
 
-    private static void gameAllFinished(){
-        JOptionPane.showMessageDialog(null, "All Players Finished the Game.", "Messae", JOptionPane.INFORMATION_MESSAGE);
-        JFrame statisticsFrame = new JFrame("Game Statistcs");
+    // Method to resize icons
+    private static ImageIcon resizeIcon(ImageIcon icon, int width, int height) {
+        Image image = icon.getImage();
+        Image resizedImage = image.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+        return new ImageIcon(resizedImage);
+    }
+    private static void gameAllFinished() {
+        JOptionPane.showMessageDialog(null, "All Players Finished the Game.", "Message", JOptionPane.INFORMATION_MESSAGE);
+        JFrame statisticsFrame = new JFrame("Game Statistics");
+        statisticsFrame.setSize(800, 850);
         statisticsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         statisticsFrame.setLayout(new BorderLayout());
 
-        List<JPanel> panelList = new ArrayList<>();
+        ImageIcon easy = new ImageIcon("easy.png");
+        ImageIcon normal = new ImageIcon("normal.png");
+        ImageIcon hard = new ImageIcon("hard.png");
 
-        // top Panel
         JPanel topPanel = new JPanel();
-        topPanel.setLayout(new BorderLayout());
-        topPanel.setBackground(Color.ORANGE);
+        topPanel.setBackground(new Color(50, 150, 200));
         topPanel.setBorder(lineBorder);
-        JLabel topLabel = new JLabel("2048 Game Statistics");
-        topLabel.setFont(topLabel.getFont().deriveFont(Font.BOLD, 30));
-        topPanel.add(topLabel, BorderLayout.CENTER);
-        statisticsFrame.add(topPanel, BorderLayout.CENTER);
-        panelList.add(topPanel);
+        JLabel topLabel = new JLabel("Game result statistics");
+        topLabel.setForeground(Color.white);
+        topLabel.setFont(new Font(null, Font.BOLD, 20));
+        topLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        topLabel.setVerticalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        topPanel.add(topLabel);
 
-        // main Panel
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new GridLayout(1, 3));
+        JPanel mainPanel = new JPanel(new GridLayout(5, 3));
         mainPanel.setBorder(lineBorder);
-        panelList.add(mainPanel);
 
-        JPanel finishedPlayerPanel = new JPanel(new BorderLayout());
-        JLabel finishedPlayerLabel = new JLabel("Finished Player Rankings");
-        finishedPlayerLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        finishedPlayerLabel.setVerticalAlignment(SwingConstants.CENTER);
-        finishedPlayerLabel.setFont(finishedPlayerLabel.getFont().deriveFont(Font.BOLD, 20));
-        finishedPlayerPanel.add(finishedPlayerLabel, BorderLayout.NORTH);
-        finishedPlayerPanel.setLayout(new GridLayout(1, finishedClients.size()));
-        // 각 플레이어 moves 수에 따른 sort 필요.
-        // 플레이어 난이도 선택에 따른 List 및 Panel 필요.
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setBorder(lineBorder);
+        bottomPanel.setBackground(new Color(50, 150, 200));
+        JLabel bottomLabel = new JLabel("2048 Game made by  @ _se__hyeon  &  @ jaehunshin_");
+        bottomLabel.setForeground(Color.white);
+        bottomLabel.setFont(new Font(null, Font.BOLD, 12));
+        bottomLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        bottomLabel.setVerticalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        bottomPanel.add(bottomLabel);
 
+        // Calculate the size of the icons based on panel size
+        int iconWidth = 100; // Adjust the size as needed
+        int iconHeight = 100; // Adjust the size as needed
+
+        JPanel easyPanel = new JPanel(new BorderLayout());
+        easyPanel.setBorder(lineBorder);
+        easyPanel.setBackground(Color.WHITE); // Set background color to white
+        JLabel easyLabel = new JLabel(resizeIcon(easy, iconWidth, iconHeight));
+        easyPanel.add(easyLabel, BorderLayout.CENTER);
+
+        JLabel easyWinLabel = new JLabel("easyWin");
+        easyWinLabel.setForeground(new Color(50, 150, 200));
+        easyWinLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        easyWinLabel.setVerticalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        JPanel easyWin = new JPanel(new BorderLayout());
+        easyWin.setBorder(lineBorder);
+        easyWin.setBackground(Color.WHITE); // Set background color to white
+        easyWin.add(easyWinLabel, BorderLayout.NORTH);
+
+        JLabel easyLoseLabel = new JLabel("easyLose");
+        easyLoseLabel.setForeground(new Color(50, 150, 200));
+        easyLoseLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        easyLoseLabel.setVerticalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        JPanel easyLose = new JPanel(new BorderLayout());
+        easyLose.setBorder(lineBorder);
+        easyLose.setBackground(Color.WHITE); // Set background color to white
+        easyLose.add(easyLoseLabel, BorderLayout.NORTH);
+
+        JLabel easyDisconnectedLabel = new JLabel("easyDisconnected");
+        easyDisconnectedLabel.setForeground(new Color(50, 150, 200));
+        easyDisconnectedLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        easyDisconnectedLabel.setVerticalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        JPanel easyDisconnected = new JPanel(new BorderLayout());
+        easyDisconnected.setBorder(lineBorder);
+        easyDisconnected.setBackground(Color.WHITE); // Set background color to white
+        easyDisconnected.add(easyDisconnectedLabel, BorderLayout.NORTH);
+
+        JLabel easyRetireLabel = new JLabel("easyRetire");
+        easyRetireLabel.setForeground(new Color(50, 150, 200));
+        easyRetireLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        easyRetireLabel.setVerticalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        JPanel easyRetire = new JPanel(new BorderLayout());
+        easyRetire.setBorder(lineBorder);
+        easyRetire.setBackground(Color.WHITE); // Set background color to white
+        easyRetire.add(easyRetireLabel, BorderLayout.NORTH);
+
+        JPanel normalPanel = new JPanel(new BorderLayout());
+        normalPanel.setBorder(lineBorder);
+        normalPanel.setBackground(Color.WHITE); // Set background color to white
+        JLabel normalLabel = new JLabel(resizeIcon(normal, iconWidth, iconHeight));
+        normalPanel.add(normalLabel, BorderLayout.CENTER);
+
+        JLabel normalWinLabel = new JLabel("normalWin");
+        normalWinLabel.setForeground(new Color(50, 150, 200));
+        normalWinLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        normalWinLabel.setVerticalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        JPanel normalWin = new JPanel(new BorderLayout());
+        normalWin.setBorder(lineBorder);
+        normalWin.setBackground(Color.WHITE); // Set background color to white
+        normalWin.add(normalWinLabel, BorderLayout.NORTH);
+
+        JLabel normalLoseLabel = new JLabel("normalLose");
+        normalLoseLabel.setForeground(new Color(50, 150, 200));
+        normalLoseLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        normalLoseLabel.setVerticalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        JPanel normalLose = new JPanel(new BorderLayout());
+        normalLose.setBorder(lineBorder);
+        normalLose.setBackground(Color.WHITE); // Set background color to white
+        normalLose.add(normalLoseLabel, BorderLayout.NORTH);
+
+        JLabel normalDisconnectedLabel = new JLabel("normalDisconnected");
+        normalDisconnectedLabel.setForeground(new Color(50, 150, 200));
+        normalDisconnectedLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        normalDisconnectedLabel.setVerticalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        JPanel normalDisconnected = new JPanel(new BorderLayout());
+        normalDisconnected.setBorder(lineBorder);
+        normalDisconnected.setBackground(Color.WHITE); // Set background color to white
+        normalDisconnected.add(normalDisconnectedLabel, BorderLayout.NORTH);
+
+        JLabel normalRetireLabel = new JLabel("normalRetire");
+        normalRetireLabel.setForeground(new Color(50, 150, 200));
+        normalRetireLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        normalRetireLabel.setVerticalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        JPanel normalRetire = new JPanel(new BorderLayout());
+        normalRetire.setBorder(lineBorder);
+        normalRetire.setBackground(Color.WHITE); // Set background color to white
+        normalRetire.add(normalRetireLabel, BorderLayout.NORTH);
+
+        JPanel hardPanel = new JPanel(new BorderLayout());
+        hardPanel.setBorder(lineBorder);
+        hardPanel.setBackground(Color.WHITE); // Set background color to white
+        JLabel hardLabel = new JLabel(resizeIcon(hard, iconWidth, iconHeight));
+        hardPanel.add(hardLabel, BorderLayout.CENTER);
+
+        JLabel hardWinLabel = new JLabel("hardWin");
+        hardWinLabel.setForeground(new Color(50, 150, 200));
+        hardWinLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        hardWinLabel.setVerticalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        JPanel hardWin = new JPanel(new BorderLayout());
+        hardWin.setBorder(lineBorder);
+        hardWin.setBackground(Color.WHITE); // Set background color to white
+        hardWin.add(hardWinLabel, BorderLayout.NORTH);
+
+        JLabel hardLoseLabel = new JLabel("hardLose");
+        hardLoseLabel.setForeground(new Color(50, 150, 200));
+        hardLoseLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        hardLoseLabel.setVerticalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        JPanel hardLose = new JPanel(new BorderLayout());
+        hardLose.setBorder(lineBorder);
+        hardLose.setBackground(Color.WHITE); // Set background color to white
+        hardLose.add(hardLoseLabel, BorderLayout.NORTH);
+
+        JLabel hardDisconnectedLabel = new JLabel("hardDisconnected");
+        hardDisconnectedLabel.setForeground(new Color(50, 150, 200));
+        hardDisconnectedLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        hardDisconnectedLabel.setVerticalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        JPanel hardDisconnected = new JPanel(new BorderLayout());
+        hardDisconnected.setBorder(lineBorder);
+        hardDisconnected.setBackground(Color.WHITE); // Set background color to white
+        hardDisconnected.add(hardDisconnectedLabel, BorderLayout.NORTH);
+
+        JLabel hardRetireLabel = new JLabel("hardRetire");
+        hardRetireLabel.setForeground(new Color(50, 150, 200));
+        hardRetireLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        hardRetireLabel.setVerticalAlignment(SwingConstants.CENTER); // 중앙 정렬
+        JPanel hardRetire = new JPanel(new BorderLayout());
+        hardRetire.setBorder(lineBorder);
+        hardRetire.setBackground(Color.WHITE); // Set background color to white
+        hardRetire.add(hardRetireLabel, BorderLayout.NORTH);
+
+        mainPanel.add(easyPanel);
+        mainPanel.add(normalPanel);
+        mainPanel.add(hardPanel);
+
+        mainPanel.add(easyWin);
+        mainPanel.add(normalWin);
+        mainPanel.add(hardWin);
+
+        mainPanel.add(easyLose);
+        mainPanel.add(normalLose);
+        mainPanel.add(hardLose);
+
+        mainPanel.add(easyRetire);
+        mainPanel.add(normalRetire);
+        mainPanel.add(hardRetire);
+
+        mainPanel.add(easyDisconnected);
+        mainPanel.add(normalDisconnected);
+        mainPanel.add(hardDisconnected);
+
+        statisticsFrame.add(topPanel, BorderLayout.NORTH);
+        statisticsFrame.add(mainPanel, BorderLayout.CENTER);
+        statisticsFrame.add(bottomPanel, BorderLayout.SOUTH);
+        statisticsFrame.setVisible(true);
     }
+
 
 
     private static void updateRankings() {
@@ -365,26 +526,39 @@ public class GameServer {
             gamePanel.revalidate();
             gamePanel.repaint();
             this.retired = true;
-
         }
 
         public void playerWin(ClientHandler clientHandler) {
             GamePanel gamePanel = getGamePanel();
+
+            // Load the original ImageIcon
+            ImageIcon retireImageIcon = new ImageIcon("win.png");
+            Image originalImage = retireImageIcon.getImage();
+
+            // Get the size of the panel
+            Dimension panelSize = gamePanel.getSize();
+
+            // Scale the image to fit the panel size
+            Image scaledImage = originalImage.getScaledInstance(panelSize.width, panelSize.height, Image.SCALE_SMOOTH);
+
+            // Create a new ImageIcon with the scaled image
+            ImageIcon scaledImageIcon = new ImageIcon(scaledImage);
+
+            // Create and set up the label with the scaled image
             gamePanel.removeAll();
+            JLabel retireLabel = new JLabel(scaledImageIcon);
 
-            // When player win the game.
-            JPanel winPanel = new JPanel(new BorderLayout());
+            // Create and set up the exit panel
+            JPanel exitPanel = new JPanel(new BorderLayout());
+            exitPanel.add(retireLabel, BorderLayout.CENTER);
 
-            // Write down the code below and add new feature to the winPanel.
-            JLabel winLabel = new JLabel("Image will go here.");
-            winLabel.setVerticalAlignment(SwingConstants.CENTER);
-            winLabel.setHorizontalAlignment(SwingConstants.CENTER);
-            winPanel.add(winLabel, BorderLayout.CENTER);
+            // Add the exit panel to the game panel
+            gamePanel.add(exitPanel, BorderLayout.CENTER);
+            gamePanel.setBorder(lineBorder);
 
-            gamePanel.add(winPanel, BorderLayout.CENTER);
+            // Revalidate and repaint the game panel
             gamePanel.revalidate();
             gamePanel.repaint();
-
         }
 
         @Override
