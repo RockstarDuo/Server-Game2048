@@ -22,7 +22,6 @@ public class GameServer {
     private static int clientCount  = 0;
 
     public static void main(String[] args) {
-        gameAllFinished();
         setupGUI();
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
