@@ -17,6 +17,8 @@ public class GameServer {
     private static final LineBorder lineBorder = new LineBorder(Color.BLACK, 1, false);
     private static List<ClientHandler> finishedClients = new CopyOnWriteArrayList<>();
     private static List<ClientHandler> retiredClients = new CopyOnWriteArrayList<>();
+    private static List<ClientHandler> exitedClients = new CopyOnWriteArrayList<>();
+    private static List<ClientHandler> gameoverClients = new CopyOnWriteArrayList<>();
     private static int clientCount  = 0;
 
     public static void main(String[] args) {
@@ -143,17 +145,96 @@ public class GameServer {
 
     public static synchronized void clientFinished(ClientHandler clientHandler) {
         finishedClients.add(clientHandler);
-        if (finishedClients.size() + retiredClients.size() == clientPanels.size()) {
+        System.out.println("---------------------------------------------");
+        System.out.println("finished client: " + finishedClients.size());
+        System.out.println("retired client: " + retiredClients.size());
+        System.out.println("exited client: " + exitedClients.size());
+        System.out.println("clientPanels: " + clientPanels.size());
+        System.out.println("---------------------------------------------");
+
+        if (finishedClients.size() + retiredClients.size() + exitedClients.size() + gameoverClients.size() == clientPanels.size()) {
             updateRankings();
+            gameAllFinished();
+            System.out.println("All Players Finished the Game.");
         }
     }
 
     public static synchronized void clientRetired(ClientHandler clientHandler) {
         retiredClients.add(clientHandler);
-        if (finishedClients.size() + retiredClients.size() == clientPanels.size()) {
+        System.out.println("---------------------------------------------");
+        System.out.println("finished client: " + finishedClients.size());
+        System.out.println("retired client: " + retiredClients.size());
+        System.out.println("exited client: " + exitedClients.size());
+        System.out.println("clientPanels: " + clientPanels.size());
+        System.out.println("---------------------------------------------");
+        if (finishedClients.size() + retiredClients.size() + exitedClients.size() + gameoverClients.size() == clientPanels.size()) {
             updateRankings();
+            gameAllFinished();
+            System.out.println("All Players Finished the Game.");
         }
     }
+
+    public static synchronized void clientExit(ClientHandler clientHandler) {
+        exitedClients.add(clientHandler);
+        System.out.println("---------------------------------------------");
+        System.out.println("finished client: " + finishedClients.size());
+        System.out.println("retired client: " + retiredClients.size());
+        System.out.println("exited client: " + exitedClients.size());
+        System.out.println("clientPanels: " + clientPanels.size());
+        System.out.println("---------------------------------------------");
+        if (finishedClients.size() + retiredClients.size() + exitedClients.size() + gameoverClients.size() == clientPanels.size()) {
+            updateRankings();
+            gameAllFinished();
+            System.out.println("All Players Finished the Game.");
+        }
+    }
+
+    public static synchronized void clientGameover(ClientHandler clientHandler) {
+        gameoverClients.add(clientHandler);
+        if (finishedClients.size() + retiredClients.size() + exitedClients.size() + gameoverClients.size() == clientPanels.size()) {
+            updateRankings();
+            gameAllFinished();
+            System.out.println("All Players Finished the Game.");
+        }
+    }
+
+    private static void gameAllFinished(){
+        JOptionPane.showMessageDialog(null, "All Players Finished the Game.", "Messae", JOptionPane.INFORMATION_MESSAGE);
+        JFrame statisticsFrame = new JFrame("Game Statistcs");
+        statisticsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        statisticsFrame.setLayout(new BorderLayout());
+
+        List<JPanel> panelList = new ArrayList<>();
+
+        // top Panel
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new BorderLayout());
+        topPanel.setBackground(Color.ORANGE);
+        topPanel.setBorder(lineBorder);
+        JLabel topLabel = new JLabel("2048 Game Statistics");
+        topLabel.setFont(topLabel.getFont().deriveFont(Font.BOLD, 30));
+        topPanel.add(topLabel, BorderLayout.CENTER);
+        statisticsFrame.add(topPanel, BorderLayout.CENTER);
+        panelList.add(topPanel);
+
+        // main Panel
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new GridLayout(1, 3));
+        mainPanel.setBorder(lineBorder);
+        panelList.add(mainPanel);
+
+        JPanel finishedPlayerPanel = new JPanel(new BorderLayout());
+        JLabel finishedPlayerLabel = new JLabel("Finished Player Rankings");
+        finishedPlayerLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        finishedPlayerLabel.setVerticalAlignment(SwingConstants.CENTER);
+        finishedPlayerLabel.setFont(finishedPlayerLabel.getFont().deriveFont(Font.BOLD, 20));
+        finishedPlayerPanel.add(finishedPlayerLabel, BorderLayout.NORTH);
+        finishedPlayerPanel.setLayout(new GridLayout(1, finishedClients.size()));
+        // 각 플레이어 moves 수에 따른 sort 필요.
+        // 플레이어 난이도 선택에 따른 List 및 Panel 필요.
+
+    }
+
 
     private static void updateRankings() {
         List<ClientHandler> sortedClients = new ArrayList<>(finishedClients);
@@ -183,6 +264,7 @@ public class GameServer {
         private boolean won;
         private int clientIdNum;
         private boolean retired = false;
+        private String name = null;
 
 
         public ClientHandler(Socket socket) throws IOException {
@@ -195,6 +277,7 @@ public class GameServer {
         }
 
         public void InitiatePanel(String playerName) {
+            this.name = playerName;
             JPanel firstPanel = panels.get(clientIdNum);  // 해당 클라이언트의 패널 가져오기
             Component[] components = firstPanel.getComponents();
             for (Component component : components) {
@@ -216,6 +299,7 @@ public class GameServer {
             firstPanel.revalidate();
             firstPanel.repaint();
         }
+
         public void playerExit(ClientHandler clientHandler) {
             GamePanel gamePanel = getGamePanel();
 
@@ -311,21 +395,30 @@ public class GameServer {
                     if (message.indexOf("^") == 0) {
                         String playerName = message.substring(1);
                         InitiatePanel(playerName);
-                    }
+                    } else if (message.indexOf("_") == 0) {
+                        String difficulty = message.substring(1);
 
-                    else if (message.equals("WIN")) {
+                        if (difficulty.equals("Easy")) {
+                            System.out.println("Difficulty: Easy");
+                        }else if (difficulty.equals("Normal")) {
+                            System.out.println("Difficulty: Normal");
+                        }else if(difficulty.equals("Hard")) {
+                            System.out.println("Difficulty: Hard");
+                        }
+
+                    } else if (message.equals("WIN")) {
                         won = true;
                         GamePanel gamePanel = getGamePanel();
-                        if (gamePanel != null) {
-                            gamePanel.showWinMessage();
-                            playerWin(this);
-                        }
+                        playerWin(this);
                         GameServer.clientFinished(this);
                         break;
                     } else if (message.equals("RETIRE")) {
-                        GameServer.clientRetired(this);
                         playerRetire(this);
+                        GameServer.clientRetired(this);
                         break;
+                    } else if (message.equals("GAMEOVER")) {
+
+                        GameServer.gameoverClients.add(this);
                     } else {
 //                        System.out.println(message);
                         int[][] board = parseBoard(message);
@@ -341,8 +434,8 @@ public class GameServer {
             } finally {
                 try {
                     if (!retired & !won){
-//                        clientRetired(this);
                         playerExit(this);
+                        clientExit(this);
                     }
                     socket.close();
                 } catch (IOException e) {
@@ -405,10 +498,6 @@ public class GameServer {
 
         public void updateMoves(int moves) {
             movesLabel.setText("Moves: " + moves);
-        }
-
-        public void showWinMessage() {
-            JOptionPane.showMessageDialog(this, "Client won!");
         }
 
         @Override
