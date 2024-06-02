@@ -11,7 +11,7 @@ import java.util.Collections;
 
 public class GameServer {
     private static final int PORT = 9999;
-    private static final Map<ClientHandler, JPanel> clientPanels = new ConcurrentHashMap<>();
+    private static final Map<ClientHandler, JPanel> clientPanels = new HashMap<>();
     private static JFrame frame;
     private static JPanel streamingPanel;
     private static List<JPanel> panels = new ArrayList<>();
@@ -231,7 +231,6 @@ public class GameServer {
 
     private static void gameAllFinished(){
         JOptionPane.showMessageDialog(null, "All Players Finished the Game.", "Message", JOptionPane.INFORMATION_MESSAGE);
-        sendStatistics();
         JFrame statisticsFrame = new JFrame("Game Statistics");
         statisticsFrame.setSize(800, 850);
         statisticsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -282,6 +281,23 @@ public class GameServer {
         easyWin.setBorder(lineBorder);
         easyWin.setBackground(Color.WHITE); // Set background color to white
         easyWin.add(easyWinLabel, BorderLayout.NORTH);
+        JPanel easyWinMain = new JPanel(new GridLayout(4,2));
+        easyWinMain.setBorder(lineBorder);
+
+        String temp = null;
+        String[] temp2 = null;
+        JLabel tempLabel = null;
+
+        temp = makeNameMoveString(sortFinishedClientList(easyModeClients));
+        temp2 = temp.split(";");
+        for (int i = 0; i < temp2.length && temp2[0].indexOf(";") != 0; i++) {
+            tempLabel = new JLabel((i+1) + " : " + temp2[i]);
+            tempLabel.setVerticalAlignment(SwingConstants.CENTER);
+            tempLabel.setHorizontalAlignment(SwingConstants.LEFT );
+            easyWinMain.add(tempLabel);
+        }
+        easyWin.add(easyWinMain, BorderLayout.CENTER);
+
 
         JLabel easyLoseLabel = new JLabel("easyLose");
         easyLoseLabel.setForeground(new Color(50, 150, 200));
@@ -292,6 +308,20 @@ public class GameServer {
         easyLose.setBackground(Color.WHITE); // Set background color to white
         easyLose.add(easyLoseLabel, BorderLayout.NORTH);
 
+        JPanel easyLoseMain = new JPanel(new GridLayout(4,2));
+        easyLoseMain.setBorder(lineBorder);
+        temp = makeNameString(sortGameoverClientList(easyModeClients));
+        temp2 = temp.split(";");
+        for (int i = 0; i < temp2.length; i++) {
+            tempLabel = new JLabel(temp2[i]);
+            tempLabel.setVerticalAlignment(SwingConstants.CENTER);
+            tempLabel.setHorizontalAlignment(SwingConstants.LEFT );
+            easyLoseMain.add(tempLabel);
+        }
+        easyLose.add(easyLoseMain, BorderLayout.CENTER);
+
+
+
         JLabel easyDisconnectedLabel = new JLabel("easyDisconnected");
         easyDisconnectedLabel.setForeground(new Color(50, 150, 200));
         easyDisconnectedLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
@@ -300,6 +330,19 @@ public class GameServer {
         easyDisconnected.setBorder(lineBorder);
         easyDisconnected.setBackground(Color.WHITE); // Set background color to white
         easyDisconnected.add(easyDisconnectedLabel, BorderLayout.NORTH);
+
+        JPanel easyDisconnectMain = new JPanel(new GridLayout(4,2));
+        easyDisconnectMain.setBorder(lineBorder);
+
+        temp = makeNameString(sortExitedClientList(easyModeClients));
+        temp2 = temp.split(";");
+        for (int i = 0; i < temp2.length; i++) {
+            tempLabel = new JLabel(temp2[i]);
+            tempLabel.setVerticalAlignment(SwingConstants.CENTER);
+            tempLabel.setHorizontalAlignment(SwingConstants.LEFT );
+            easyDisconnectMain.add(tempLabel);
+        }
+        easyDisconnected.add(easyDisconnectMain, BorderLayout.CENTER);
 
         JLabel easyRetireLabel = new JLabel("easyRetire");
         easyRetireLabel.setForeground(new Color(50, 150, 200));
@@ -310,11 +353,26 @@ public class GameServer {
         easyRetire.setBackground(Color.WHITE); // Set background color to white
         easyRetire.add(easyRetireLabel, BorderLayout.NORTH);
 
+        JPanel easyRetireMain = new JPanel(new GridLayout(4,2));
+        easyRetireMain.setBorder(lineBorder);
+
+        temp = makeNameString(sortRetireClientList(easyModeClients));
+        temp2 = temp.split(";");
+        for (int i = 0; i < temp2.length; i++) {
+            tempLabel = new JLabel(temp2[i]);
+            tempLabel.setVerticalAlignment(SwingConstants.CENTER);
+            tempLabel.setHorizontalAlignment(SwingConstants.LEFT );
+            easyRetireMain.add(tempLabel);
+        }
+        easyRetire.add(easyRetireMain, BorderLayout.CENTER);
+
         JPanel normalPanel = new JPanel(new BorderLayout());
         normalPanel.setBorder(lineBorder);
         normalPanel.setBackground(Color.WHITE); // Set background color to white
         JLabel normalLabel = new JLabel(resizeIcon(normal, iconWidth, iconHeight));
         normalPanel.add(normalLabel, BorderLayout.CENTER);
+
+
 
         JLabel normalWinLabel = new JLabel("normalWin");
         normalWinLabel.setForeground(new Color(50, 150, 200));
@@ -325,6 +383,19 @@ public class GameServer {
         normalWin.setBackground(Color.WHITE); // Set background color to white
         normalWin.add(normalWinLabel, BorderLayout.NORTH);
 
+        JPanel normalWinMain = new JPanel(new GridLayout(4,2));
+        normalWinMain.setBorder(lineBorder);
+        temp = makeNameMoveString(sortFinishedClientList(normalModeClients));
+        temp2 = temp.split(";");
+        for (int i = 0; i < temp2.length && temp2[0].indexOf(";") != 0; i++) {
+            tempLabel = new JLabel((i+1) + " : " + temp2[i]);
+            tempLabel.setVerticalAlignment(SwingConstants.CENTER);
+            tempLabel.setHorizontalAlignment(SwingConstants.LEFT );
+            normalWinMain.add(tempLabel);
+
+        }
+        normalWin.add(normalWinMain, BorderLayout.CENTER);
+
         JLabel normalLoseLabel = new JLabel("normalLose");
         normalLoseLabel.setForeground(new Color(50, 150, 200));
         normalLoseLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
@@ -333,6 +404,21 @@ public class GameServer {
         normalLose.setBorder(lineBorder);
         normalLose.setBackground(Color.WHITE); // Set background color to white
         normalLose.add(normalLoseLabel, BorderLayout.NORTH);
+
+        JPanel normalLoseMain = new JPanel(new GridLayout(4,2));
+        normalLoseMain.setBorder(lineBorder);
+
+        temp = makeNameString(sortGameoverClientList(normalModeClients));
+        temp2 = temp.split(";");
+        for (int i = 0; i < temp2.length; i++) {
+            tempLabel = new JLabel(temp2[i]);
+            tempLabel.setVerticalAlignment(SwingConstants.CENTER);
+            tempLabel.setHorizontalAlignment(SwingConstants.LEFT );
+            normalLoseMain.add(tempLabel);
+
+        }
+        normalLose.add(normalLoseMain, BorderLayout.CENTER);
+
 
         JLabel normalDisconnectedLabel = new JLabel("normalDisconnected");
         normalDisconnectedLabel.setForeground(new Color(50, 150, 200));
@@ -343,6 +429,21 @@ public class GameServer {
         normalDisconnected.setBackground(Color.WHITE); // Set background color to white
         normalDisconnected.add(normalDisconnectedLabel, BorderLayout.NORTH);
 
+        JPanel normalDisconnectedMain = new JPanel(new GridLayout(4,2));
+        normalDisconnectedMain.setBorder(lineBorder);
+
+        temp = makeNameString(sortExitedClientList(normalModeClients));
+        temp2 = temp.split(";");
+        for (int i = 0; i < temp2.length; i++) {
+            tempLabel = new JLabel(temp2[i]);
+            tempLabel.setVerticalAlignment(SwingConstants.CENTER);
+            tempLabel.setHorizontalAlignment(SwingConstants.LEFT );
+            normalDisconnectedMain.add(tempLabel);
+
+        }
+        normalDisconnected.add(normalDisconnectedMain, BorderLayout.CENTER);
+
+
         JLabel normalRetireLabel = new JLabel("normalRetire");
         normalRetireLabel.setForeground(new Color(50, 150, 200));
         normalRetireLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
@@ -351,6 +452,19 @@ public class GameServer {
         normalRetire.setBorder(lineBorder);
         normalRetire.setBackground(Color.WHITE); // Set background color to white
         normalRetire.add(normalRetireLabel, BorderLayout.NORTH);
+
+        JPanel normalRetireMain = new JPanel(new GridLayout(4,2));
+        normalRetireMain.setBorder(lineBorder);
+
+        temp = makeNameString(sortRetireClientList(normalModeClients));
+        temp2 = temp.split(";");
+        for (int i = 0; i < temp2.length; i++) {
+            tempLabel = new JLabel(temp2[i]);
+            tempLabel.setVerticalAlignment(SwingConstants.CENTER);
+            tempLabel.setHorizontalAlignment(SwingConstants.LEFT );
+            normalRetireMain.add(tempLabel);
+        }
+        normalRetire.add(normalRetireMain, BorderLayout.CENTER);
 
         JPanel hardPanel = new JPanel(new BorderLayout());
         hardPanel.setBorder(lineBorder);
@@ -367,6 +481,19 @@ public class GameServer {
         hardWin.setBackground(Color.WHITE); // Set background color to white
         hardWin.add(hardWinLabel, BorderLayout.NORTH);
 
+        JPanel hardWinMain = new JPanel(new GridLayout(4,2));
+        hardWinMain.setBorder(lineBorder);
+
+        temp = makeNameMoveString(sortFinishedClientList(hardModeClients));
+        temp2 = temp.split(";");
+        for (int i = 0; i < temp2.length && temp2[0].indexOf(";") != 0; i++) {
+            tempLabel = new JLabel((i+1) + " : " + temp2[i]);
+            tempLabel.setVerticalAlignment(SwingConstants.CENTER);
+            tempLabel.setHorizontalAlignment(SwingConstants.LEFT );
+            hardWinMain.add(tempLabel);
+        }
+        hardWin.add(hardWinMain, BorderLayout.CENTER);
+
         JLabel hardLoseLabel = new JLabel("hardLose");
         hardLoseLabel.setForeground(new Color(50, 150, 200));
         hardLoseLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
@@ -375,6 +502,19 @@ public class GameServer {
         hardLose.setBorder(lineBorder);
         hardLose.setBackground(Color.WHITE); // Set background color to white
         hardLose.add(hardLoseLabel, BorderLayout.NORTH);
+
+        JPanel hardLoseMain = new JPanel(new GridLayout(4,2));
+        hardLoseMain.setBorder(lineBorder);
+
+        temp = makeNameString(sortGameoverClientList(hardModeClients));
+        temp2 = temp.split(";");
+        for (int i = 0; i < temp2.length; i++) {
+            tempLabel = new JLabel(temp2[i]);
+            tempLabel.setVerticalAlignment(SwingConstants.CENTER);
+            tempLabel.setHorizontalAlignment(SwingConstants.LEFT );
+            hardLoseMain.add(tempLabel);
+        }
+        hardLose.add(hardLoseMain, BorderLayout.CENTER);
 
         JLabel hardDisconnectedLabel = new JLabel("hardDisconnected");
         hardDisconnectedLabel.setForeground(new Color(50, 150, 200));
@@ -385,6 +525,19 @@ public class GameServer {
         hardDisconnected.setBackground(Color.WHITE); // Set background color to white
         hardDisconnected.add(hardDisconnectedLabel, BorderLayout.NORTH);
 
+        JPanel hardDisconnectedMain = new JPanel(new GridLayout(4,2));
+        hardDisconnectedMain.setBorder(lineBorder);
+
+        temp = makeNameString(sortExitedClientList(hardModeClients));
+        temp2 = temp.split(";");
+        for (int i = 0; i < temp2.length; i++) {
+            tempLabel = new JLabel(temp2[i]);
+            tempLabel.setVerticalAlignment(SwingConstants.CENTER);
+            tempLabel.setHorizontalAlignment(SwingConstants.LEFT );
+            hardDisconnectedMain.add(tempLabel);
+        }
+        hardDisconnected.add(hardDisconnectedMain, BorderLayout.CENTER);
+
         JLabel hardRetireLabel = new JLabel("hardRetire");
         hardRetireLabel.setForeground(new Color(50, 150, 200));
         hardRetireLabel.setHorizontalAlignment(SwingConstants.CENTER); // 중앙 정렬
@@ -393,6 +546,19 @@ public class GameServer {
         hardRetire.setBorder(lineBorder);
         hardRetire.setBackground(Color.WHITE); // Set background color to white
         hardRetire.add(hardRetireLabel, BorderLayout.NORTH);
+
+        JPanel hardRetireMain = new JPanel(new GridLayout(4, 2));
+        hardRetireMain.setBorder(lineBorder);
+
+        temp = makeNameString(sortRetireClientList(hardModeClients));
+        temp2 = temp.split(";");
+        for (int i = 0; i < temp2.length; i++) {
+            tempLabel = new JLabel(temp2[i]);
+            tempLabel.setVerticalAlignment(SwingConstants.CENTER);
+            tempLabel.setHorizontalAlignment(SwingConstants.LEFT );
+            hardRetireMain.add(tempLabel);
+        }
+        hardRetire.add(hardRetireMain, BorderLayout.CENTER);
 
         mainPanel.add(easyPanel);
         mainPanel.add(normalPanel);
@@ -421,10 +587,10 @@ public class GameServer {
 
     }
 
-    private static void sendStatistics() {
+    private static void calculateStats() {
         // finished -> gameover -> retire -> exit 순으로 보냄
         for (ClientHandler client : clientPanels.keySet()) {
-            client.out.println(makeNameMoveString(sortFinishedClientList(easyModeClients)));
+            /*client.out.println(makeNameMoveString(sortFinishedClientList(easyModeClients)));
             client.out.println(makeNameString(sortGameoverClientList(easyModeClients)));
             client.out.println(makeNameString(sortRetireClientList(easyModeClients)));
             client.out.println(makeNameString(sortExitedClientList(easyModeClients)));
@@ -437,8 +603,9 @@ public class GameServer {
             client.out.println(makeNameMoveString(sortFinishedClientList(hardModeClients)));
             client.out.println(makeNameString(sortGameoverClientList(hardModeClients)));
             client.out.println(makeNameString(sortRetireClientList(hardModeClients)));
-            client.out.println(makeNameString(sortExitedClientList(hardModeClients)));
+            client.out.println(makeNameString(sortExitedClientList(hardModeClients)));*/
         }
+
     }
 
 
@@ -457,9 +624,9 @@ public class GameServer {
         filteredClients.sort(Comparator.comparing(ClientHandler::getMoves));
 
         // moves 수 오름차순으로 sort 한거 확인출력
-        for (ClientHandler client : filteredClients) {
+        /*for (ClientHandler client : filteredClients) {
             System.out.println(client.getMoves());
-        }
+        }*/
 
         // Return the sorted list of clients
         return filteredClients;
